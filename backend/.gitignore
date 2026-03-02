@@ -1,0 +1,9 @@
+.env
+*.pyc
+*.log
+*.db
+data/
+config/.DS_Store
+nginx_lotus_static.conf
+logs/
+chroma/chroma.sqlite3

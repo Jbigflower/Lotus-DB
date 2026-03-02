@@ -1,0 +1,42 @@
+/* Motion primitives: fade, slide, pop, blur, spin, utility classes */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes slide-down {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes blur-in {
+  from { filter: blur(8px); opacity: 0; }
+  to { filter: blur(0); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Utility animation classes */
+.anim-fade-in { animation: fade-in var(--duration-medium) var(--ease) both; }
+.anim-fade-out { animation: fade-out var(--duration-medium) var(--ease) both; }
+.anim-slide-up { animation: slide-up var(--duration-medium) var(--ease) both; }
+.anim-slide-down { animation: slide-down var(--duration-medium) var(--ease) both; }
+.anim-pop-in { animation: pop-in var(--duration-fast) var(--ease-pop) both; }
+.anim-blur-in { animation: blur-in var(--duration-medium) var(--ease-in-out) both; }
+.anim-spin { animation: spin 1s linear infinite; }

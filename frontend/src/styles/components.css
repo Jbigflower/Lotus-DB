@@ -1,0 +1,292 @@
+/* Components: buttons, inputs, cards, chips, modal, tabs, toolbar, list/grid */
+
+/* Button */
+.btn {
+  --btn-bg: var(--surface-2);
+  --btn-text: var(--text-primary);
+  --btn-border: var(--border);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+
+  font-weight: 600;
+  font-size: var(--text-sm);
+  letter-spacing: 0.2px;
+
+  transition: background var(--duration-medium) var(--ease),
+              transform var(--duration-fast) var(--ease);
+}
+.btn:hover { background: color-mix(in oklab, var(--btn-bg), var(--brand-weak) 12%); }
+.btn:active { transform: translateY(1px); }
+
+.btn--primary {
+  --btn-bg: var(--brand);
+  --btn-text: var(--on-brand);
+  --btn-border: transparent;
+}
+.btn--secondary {
+  --btn-bg: var(--surface);
+  --btn-text: var(--text-primary);
+  --btn-border: var(--border);
+}
+.btn--ghost {
+  --btn-bg: transparent;
+  --btn-text: var(--text-secondary);
+  --btn-border: var(--border);
+}
+.btn--danger {
+  --btn-bg: var(--danger);
+  --btn-text: var(--on-brand);
+  --btn-border: transparent;
+}
+
+.btn--sm { height: 30px; padding: 0 var(--space-3); font-size: var(--text-xs); }
+.btn--lg { height: 44px; padding: 0 var(--space-5); font-size: var(--text-md); }
+
+.btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Input, Select, Textarea */
+.input, .select, .textarea {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+.textarea { min-height: 100px; padding: var(--space-3) var(--space-4); resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--text-muted); }
+
+.input:focus, .select:focus, .textarea:focus {
+  border-color: color-mix(in oklab, var(--brand), black 12%);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Input group (search) */
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 var(--space-3);
+  height: 36px;
+}
+.input-group .icon {
+  color: var(--text-muted);
+}
+.input-group .input {
+  border: none;
+  padding: 0;
+  height: 100%;
+  background: transparent;
+}
+
+/* Chip (filters/tags) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  transition: background var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease);
+}
+.chip:hover { background: color-mix(in oklab, var(--surface-2), var(--brand-weak) 16%); }
+.chip--active {
+  background: color-mix(in oklab, var(--brand), white 85%);
+  color: var(--text-primary);
+  border-color: color-mix(in oklab, var(--brand), black 10%);
+}
+
+/* Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* 修复：移除非法三元表达式，改为使用变量控制 */
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+.card--hover:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); transition: transform var(--duration-fast) var(--ease), box-shadow var(--duration-medium) var(--ease); }
+
+/* Modal */
+.modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+}
+.modal__content {
+  width: min(720px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  padding: var(--space-6);
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  z-index: var(--z-tooltip);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  font-size: var(--text-xs);
+  box-shadow: var(--shadow-1);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.tabs__item {
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-decoration: none;
+}
+.tabs__item--active {
+  color: var(--text-primary);
+  border-color: var(--brand);
+}
+.tabs__item:hover { text-decoration: underline; }
+.tabs__item:active { opacity: 0.92; }
+.tabs__item:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Toolbar / segmented */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.segmented {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.segmented__item {
+  padding: 6px 12px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.segmented__item--active {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+/* List & Grid for 极简(B) — supports dragging and filters */
+.list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--gap);
+}
+
+.draggable {
+  cursor: grab;
+}
+.draggable:active {
+  cursor: grabbing;
+}
+.dragging {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+.drop-placeholder {
+  outline: 2px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+/* Skeleton */
+.skeleton {
+  position: relative;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--surface-2), white 35%) 50%,
+    transparent 100%);
+  animation: shimmer 1.2s var(--ease-in-out) infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+
+/* MediaCard layout (minimal,复用已有设计变量与类) */
+.media-card { display: grid; gap: var(--gap); }
+.media-card .poster { position: relative; border-radius: var(--radius); overflow: hidden; background: var(--surface-2); }
+.media-card .poster img { display: block; width: 100%; height: auto; }
+.media-card .poster--placeholder { display: grid; place-items: center; height: 160px; color: var(--text-muted); }
+.media-card .actions { position: absolute; top: var(--space-2); right: var(--space-2); display: flex; gap: var(--space-2); }
+.media-card .title { font-size: var(--text-md); font-weight: 600; color: var(--text-primary); }
+.media-card .meta { display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); }
+.media-card .rating { color: var(--brand); }
+.media-card .tags { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; margin: 0; list-style: none; }
+.media-card .progress { height: 6px; background: var(--surface-2); border-radius: var(--radius-pill); overflow: hidden; }
+.media-card .progress .bar { height: 100%; background: var(--brand); transition: width var(--duration-medium) var(--ease); }
+
+/* Breadcrumbs */
+.breadcrumbs { display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); }
+.breadcrumbs ul { display: flex; align-items: center; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.breadcrumbs a { color: var(--text-secondary); }
+.breadcrumbs a:hover { color: var(--brand); transition: color var(--duration-fast) var(--ease); }

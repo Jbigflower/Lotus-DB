@@ -1,0 +1,1 @@
+import duckduckgo_search

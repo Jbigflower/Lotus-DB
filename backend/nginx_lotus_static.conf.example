@@ -1,0 +1,62 @@
+# 必须的 events 块（放在 http 块前面或后面均可）
+events {
+    worker_connections  1024;  # 定义每个工作进程的最大连接数（默认值即可）
+}
+
+http {
+    # 必要的基础配置（否则可能出现 MIME 类型等问题）
+    include /opt/homebrew/etc/nginx/mime.types;  # 请更改
+    default_type application/octet-stream;
+
+    # 你的 server 配置
+    server {
+        listen 8080;
+        server_name localhost;
+
+        # 库资源：/static/library/{library_id}/...
+        location /static/library/ {
+            # 校验签名与过期时间
+            secure_link $arg_st,$arg_e;
+            secure_link_md5 "$secure_link_expires$uri change-me";  # 注意替换 "change-me" 为实际密钥
+            if ($secure_link = "") { return 403; }  # 签名无效
+            if ($secure_link = "0") { return 410; }  # 链接过期
+
+            # 允许跨域请求
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods "GET, OPTIONS";
+            add_header Access-Control-Allow-Headers "Range,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type";
+            add_header Access-Control-Expose-Headers "Content-Length,Content-Range";
+            add_header Accept-Ranges bytes;
+
+            # OPTIONS 预检处理
+            if ($request_method = OPTIONS) {
+                return 204;
+            }
+
+            # 映射到实际目录（请替换为你的绝对路径）
+            alias 
+        }
+
+        # 用户资源：/static/user/{user_id}/...
+        location /static/user/ {
+            secure_link $arg_st,$arg_e;
+            secure_link_md5 "$secure_link_expires$uri change-me";  # 密钥需与后端一致
+            if ($secure_link = "") { return 403; }
+            if ($secure_link = "0") { return 410; }
+
+            # 允许跨域请求
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods "GET, OPTIONS";
+            add_header Access-Control-Allow-Headers "Range,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type";
+            add_header Access-Control-Expose-Headers "Content-Length,Content-Range";
+            add_header Accept-Ranges bytes;
+
+            # OPTIONS 预检处理
+            if ($request_method = OPTIONS) {
+                return 204;
+            }
+            # 映射到实际目录（替换为你的绝对路径）
+            alias 
+        }
+    }
+}

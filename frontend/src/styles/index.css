@@ -1,0 +1,8 @@
+/* Aggregate imports; order matters: tokens → theme → base → components → animations → utilities */
+
+@import "./tokens.css";
+@import "./theme.css";
+@import "./base.css";
+@import "./components.css";
+@import "./animations.css";
+@import "./utilities.css";
