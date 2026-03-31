@@ -39,9 +39,10 @@ Lotus-DB/
 
 *   **Python**: 3.11 或更高版本 (推荐使用 Conda 管理环境)
 *   **Node.js**: v18 或更高版本 (推荐 v20)
-*   **MongoDB**: 运行在默认端口 27017
+*   **MongoDB**: 副本集形式运行在默认端口 27017
 *   **Redis**: 运行在默认端口 6379
-*   **Ollama** (可选): 用于本地 LLM 支持 (默认使用 Ollama 提供 Embedding 与 Chat 能力)
+*   **Ollama**: 用于本地 LLM 支持 (默认使用 Ollama 提供 Embedding 与 Chat 能力)
+*   **Nginx**: 用于反向代理与负载均衡 (默认使用 Nginx)
 
 ---
 
@@ -50,7 +51,7 @@ Lotus-DB/
 进入后端目录并配置环境：
 
 ```bash
-cd lotus-db-backend-refactor
+cd backend
 
 # 1. 创建并配置环境变量
 cp .env.example .env
@@ -74,8 +75,6 @@ python run.py
 
 # 4. 动后台任务 Worker
 # 用于处理文件扫描、元数据下载等耗时任务
-python run.backtask.py
-# 或者
 python -m src.async_worker.main
 ```
 

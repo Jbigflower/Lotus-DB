@@ -1,0 +1,106 @@
+# Agent Refactor Changelog
+
+## [2026-03-30]
+- Added ContextBuilder to unify context construction and budget governance.
+- Updated AgentLoop to use ContextBuilder and removed duplicated build logic.
+- Fixed tool_calls argument serialization to satisfy LLM request schema.
+- Hardened tool_call pairing to avoid invalid request errors after restarts.
+- Updated PM status to mark P5-S04 complete and move focus to P5-S06.
+- Implemented concurrent execution for same-round tool_calls while preserving tool_end ordering in AgentLoop.
+- Updated Phase 5 progress tracking to mark P5-S03 complete and move focus to P5-S04.
+- Ran `python -m pytest tests/agent/test_loop.py -q` (passed with warnings).
+- Added Phase 5 (Agent System Optimization) steps to the refactor guidelines.
+- Updated progress board for Phase 5 system optimization items and completion status.
+- Set current step to P5-S03 with updated goals and verification notes.
+- Refreshed handover context to reflect Phase 5 focus and next task.
+- Integrated MemoryRuntime with lazy init for Mongo/LanceDB, retriever, and extraction pipeline.
+- Injected agent/user/session memories into `_build_messages` with memory_context sections.
+- Enabled post-turn memory extraction in `llm_service.py`.
+- Added agent memory accessor to `MemoryStoreFacade`.
+- Added documentation updates and inline code comments for memory activation flow.
+- Ran `python -m pytest tests/agent/ -q` (collection failed: missing `AgentServiceV2`/`LLMService` imports in e2e tests).
+
+## [2026-03-14]
+- Archived legacy agent code to `src/agent_legacy` and removed src.agent references.
+- Added agent tool builders and updated tool/router imports.
+- Updated legacy scripts/tests to reference agent_legacy paths.
+- Added real-LLM end-to-end acceptance tests for P4 with DeepSeek API.
+- Fixed tool_call_id handling to preserve provider IDs for real LLM tools.
+- Ran `python -m pytest tests/agent/e2e/test_p4_real_llm_e2e.py -q` (passed with warnings).
+- Added P4 end-to-end acceptance tests for /chat and /chat/stream scenarios.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Switched LLMService and router /chat paths to AgentServiceV2 with SSE events.
+- Added llm router tests for chat and stream endpoints.
+- Ran `python -m pytest tests/agent/ -q` and `python -m pytest tests/routers/test_llm_router.py -q` (passed with warnings).
+- Implemented AgentServiceV2 with SessionManager, AgentLoop, and SSE encoder.
+- Added AgentServiceV2 chat unit tests for stream and non-stream paths.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Implemented Mongo-backed SessionManager and Session model for agent.
+- Added session persistence unit tests under `tests/agent/test_session_manager.py`.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Added P3 real-LLM end-to-end tests for context budget and delegation.
+- Ran `python -m pytest tests/agent/context/test_p3_e2e_real_llm.py -q` (passed with warnings).
+- Integrated ContextAssembler and DelegationHandler into AgentLoop.
+- Added delegate integration test for AgentLoop.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Implemented DelegationHandler with specialist configs and scoped sub-agent input.
+- Added delegation unit tests for execution and specialist tool constraints.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Integrated ProgressiveSummarizer into ContextAssembler with summary-first compression.
+- Added ContextAssembler tests to ensure summaries and last 3 turns preservation.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Implemented ProgressiveSummarizer with rolling summary updates and one-off summarization.
+- Added ProgressiveSummarizer unit tests for trigger cadence and summary merge prompts.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Implemented ContextAssembler with ContextBudget presets and sectioned trimming.
+- Added context assembler tests for ordering and budget trimming.
+- Updated FakeLanceTable test doubles to accept LanceDB update values.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Verified Phase 2 (Memory System) end-to-end with real DeepSeek LLM.
+- Created `tests/agent/memory/test_memory_e2e.py` covering extraction, retrieval, and conflict resolution.
+- Fixed `ExtractionPipeline` and `ConflictResolver` to handle markdown-wrapped JSON from LLM.
+- Fixed `MemoryStoreFacade` usage of `lancedb` API (`updates` -> `values`).
+- Implemented ConflictResolver with superseded flow and optional refinement update.
+- Added conflict resolver tests for superseded status updates.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Implemented ExtractionPipeline with JSON parsing and async triggers.
+- Added extraction pipeline tests for valid and invalid payloads.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Implemented MemoryRetriever with semantic rerank and assembled memory output.
+- Added retrieval tests for session/user/agent memories.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Fixed MemoryStoreFacade semantic search ordering to preserve LanceDB ranking.
+- Moved memory store tests to `tests/agent/memory/` and added ordering test.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Added MemoryItem models and MemoryStoreFacade with Mongo/Lance double-write.
+- Added P2-S01 tests for memory item roundtrip and double-write.
+- Ran `python -m pytest tests/agent/ -q` (passed with warnings).
+- Created `tests/agent/test_p1_integration_real_llm.py` for full integration testing with `pytest`, `mongomock_motor`, and seeded data.
+- Enhanced `_FallbackUser` in `movie_tools.py` with `username` field to support service layer logic during tests.
+- Successfully verified `list_movies` tool execution end-to-end with real DeepSeek API and mock database.
+- Removed obsolete manual verification script `verify_p1_real_llm.py`.
+
+## [2026-03-14] (Previous)
+- Verified Phase 1 implementation with real LLM (DeepSeek).
+- Created `tests/agent/verify_p1_real_llm.py` for manual verification.
+- Installed `langchain` and `langchain-openai` to resolve service layer dependencies.
+- Confirmed `LLMClient` and `AgentLoop` work correctly with real API.
+- Confirmed `ToolRegistry` correctly loads `movie_tools`.
+- Transitioned to Phase 2.
+- Updated `Agent Refactor Guidelines.md` to v2.0 based on expert review ("Fix" document).
+- Changed strategy to "Port Nanobot" instead of "Reimplement from scratch".
+- Updated `progress_board.md` to match new steps.
+- Initialized project management files.
+- Implemented `AgentConfig`, message models, and stream protocol for P1-S01.
+- Added P1-S01 unit tests under `tests/agent/`.
+- Implemented ToolDefinition and ToolRegistry for P1-S02.
+- Added ToolRegistry unit tests under `tests/agent/`.
+- Implemented LLMClient provider with retry and message sanitization for P1-S03.
+- Added LLM provider unit tests under `tests/agent/`.
+- Added token-level streaming `chat_stream` with text_delta events for P1-S03a.
+- Extended LLM provider tests to cover delta streaming.
+- Implemented AgentLoop core iteration with tool execution and error strategy for P1-S04.
+- Added AgentLoop unit tests under `tests/agent/`.
+- Ported movie_tools into agent with RequestContext wiring for P1-S05.
+- Added movie_tools unit tests under `tests/agent/`.
+- Aligned movie_tools parameter validation with movies router and removed legacy builder usage.

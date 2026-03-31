@@ -6,7 +6,7 @@ from .library_migration_task import (
     refactor_library_structure_task,
     cleanup_library_files_task,
 )
-from .media_processing_task import extract_metadata_task, generate_thumb_sprite_task
+from .media_processing_task import extract_metadata_task, generate_thumb_sprite_task, extract_memory_task
 from .movie_import_task import import_movies_task
 
 from .download_task import (
@@ -22,6 +22,7 @@ __all__ = [
     "cleanup_library_files_task",
     "extract_metadata_task",
     "generate_thumb_sprite_task",
+    "extract_memory_task",
     "import_movies_task",
     
     "download_movie_thumb_task",

@@ -111,7 +111,7 @@ export const useMovieStore = defineStore('movie', () => {
     try {
       const res = await movies.createMovie(token, payload, options)
       const m = res.movie_info
-      lastCreateTaskId.value = res.task_id
+      lastCreateTaskId.value = res.task_id ?? null
       entities.value = { ...entities.value, [m.id]: m }
       list.value = [m, ...list.value]
       return m

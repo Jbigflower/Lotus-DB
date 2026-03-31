@@ -19,6 +19,11 @@ from .users.user_asset_logic import UserAssetLogic
 from .users.user_logic import UserLogic
 from .users.watch_history_logic import WatchHistoryLogic
 
+# RAG Logic
+from .rag.query_rewriter_logic import QueryRewriterFactory, BaseQueryRewriter
+from .rag.reranker_logic import BaseReRanker, CrossEncoderReRanker, OllamaEncoderReranker
+from .rag.searcher_logic import HybridSearcher
+
 __all__ = [
     # Movies
     "MovieAssetLogic",
@@ -32,4 +37,11 @@ __all__ = [
     "UserAssetLogic",
     "UserLogic",
     "WatchHistoryLogic",
+    # RAG
+    "QueryRewriterFactory",
+    "BaseQueryRewriter",
+    "BaseReRanker",
+    "CrossEncoderReRanker",
+    "OllamaEncoderReranker",
+    "HybridSearcher",
 ]

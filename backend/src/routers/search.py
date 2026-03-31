@@ -8,13 +8,14 @@ from src.core.dependencies import get_current_user
 from src.core.handler import router_handler
 from config.logging import get_router_logger
 
-from src.services import SearchService
+from src.services import SearchService, RagSearchService
 
 router = APIRouter(prefix="/api/v1/search", tags=["Search"])
 
 logger = get_router_logger("search")
 
 search_service = SearchService()
+rag_search_service = RagSearchService()
 
 
 class NSSearchRequest(BaseModel):
@@ -30,6 +31,12 @@ class NSSearchRequest(BaseModel):
     keyword_weight: float = Field(0.3, ge=0, le=1, description="关键词分权重")
     max_per_parent: int = Field(2, ge=0, le=10, description="同一资产最大片段数")
     use_cache: bool = Field(False, description="是否启用缓存")
+    
+    # RAG Config
+    enable_rewrite: bool = Field(False, description="Enable Query Rewrite")
+    rewrite_type: str = Field("llm", description="Rewrite Type: llm, hyde, multi_query")
+    enable_rerank: bool = Field(False, description="Enable Reranking")
+    rerank_type: str = Field("cross_encoder", description="Rerank Type: cross_encoder, ollama")
 
 
 @router.get("/", response_model=dict)
@@ -63,16 +70,26 @@ async def ns_search(
     payload: NSSearchRequest = Body(...),
     current_user=Depends(get_current_user),
 ):
-    return await search_service.ns_search(
+    # Use RagSearchService
+    return await rag_search_service.search(
         query=payload.query,
         page=payload.page,
         size=payload.size,
-        only_me=payload.only_me,
         types=payload.types,
-        top_k=payload.top_k,
-        vector_weight=payload.vector_weight,
-        keyword_weight=payload.keyword_weight,
-        max_per_parent=payload.max_per_parent,
-        use_cache=payload.use_cache,
+        
+        # Rewrite
+        enable_rewrite=payload.enable_rewrite,
+        rewrite_type=payload.rewrite_type,
+        
+        # Search
+        search_mode="hybrid", # Default to hybrid
+        top_k=payload.top_k or 20,
+        
+        # Rerank
+        enable_rerank=payload.enable_rerank,
+        rerank_type=payload.rerank_type,
+        
+        # Filters
+        only_me=payload.only_me,
         current_user=current_user,
     )

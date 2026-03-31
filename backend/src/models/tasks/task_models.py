@@ -52,6 +52,9 @@ class TaskSubType(str, Enum):
     SYNC_DIRTY_COLLECTIONS = "sync_dirty_collections"
     REFRESH_COLLECTION_CACHE = "refresh_collection_cache"
 
+    # Agent 相关
+    MEMORY_EXTRACTION = "memory_extraction"
+
 
 class TaskStatus(str, Enum):
     PENDING = "pending"

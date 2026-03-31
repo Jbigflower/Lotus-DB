@@ -13,7 +13,7 @@ from fastapi import (
 )
 from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from src.core.dependencies import get_current_user  # 返回当前登录用户对象
 from src.models import (
     UserAssetType,
@@ -186,9 +186,9 @@ async def create_text_user_asset(
     data["user_id"] = current_user.id
     if not data.get("name"):
         preview = str(data.get("content") or "").strip()
-        data["name"] = (preview[:20] or datetime.utcnow().strftime("%Y%m%d_%H%M%S"))
+        data["name"] = (preview[:20] or datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S"))
     if not data.get("path"):
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         folder = body.type.value
         data["path"] = f"{body.movie_id}/{folder}/{ts}.md"
     if not data.get("store_type"):

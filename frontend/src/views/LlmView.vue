@@ -49,26 +49,6 @@
           <span class="header-title">{{ currentThreadTitle || '新对话' }}</span>
         </div>
         <div class="header-actions">
-           <el-select 
-             v-model="agentVersion" 
-             placeholder="选择 Agent" 
-             style="width: 160px"
-             :disabled="!!currentThreadId"
-             size="small"
-           >
-             <el-option label="React base" value="React base" />
-             <el-option label="Plan base" value="Plan base" />
-             <el-option label="Orchestrator base" value="Orchestrator base" />
-             <el-option label="React Augment" value="React Augment" />
-           </el-select>
-           <el-button 
-             size="small" 
-             style="margin-left: 8px"
-             :disabled="!langsmithEnabled"
-             @click="openLangsmith"
-           >
-             LangSmith
-           </el-button>
         </div>
       </div>
 
@@ -123,7 +103,21 @@
             <div class="content-column">
               <div class="message-bubble">
                 <div v-if="msg.role === 'assistant'">
-                  <div v-if="!msg.content" class="typing-indicator">
+                  <!-- 工具调用状态展示 -->
+                  <div v-if="msg.toolCalls && msg.toolCalls.length > 0" class="tool-calls-container">
+                    <div 
+                      v-for="(tool, tIdx) in msg.toolCalls" 
+                      :key="tIdx"
+                      class="tool-call-status"
+                    >
+                      <el-icon v-if="tool.status === 'running'" class="is-loading"><Loading /></el-icon>
+                      <el-icon v-else-if="tool.status === 'done'"><Check /></el-icon>
+                      <el-icon v-else><Close /></el-icon>
+                      <span class="ml-1">正在调用工具: {{ tool.name }}...</span>
+                    </div>
+                  </div>
+
+                  <div v-if="!msg.content && (!msg.toolCalls || msg.toolCalls.length === 0)" class="typing-indicator">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -170,12 +164,11 @@
 <script setup lang="ts">
 import { ref, nextTick, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Delete, Position } from '@element-plus/icons-vue'
+import { Plus, Delete, Position, Loading, Check, Close } from '@element-plus/icons-vue'
 import { 
   chatStream,
   getThreads, 
   getThread,
-  getLangsmithInfo,
   deleteThread,
   type ChatMessage, 
   type ThreadSummary 
@@ -187,20 +180,11 @@ const userStore = useUserStore()
 const messages = ref<ChatMessage[]>([])
 const threads = ref<ThreadSummary[]>([])
 const currentThreadId = ref<string>('')
-const agentVersion = ref<string>('React base')
 const inputMessage = ref('')
 const loading = ref(false)
 const loadingHistory = ref(false)
 const chatMainRef = ref<HTMLElement | null>(null)
-const langsmithEnabled = ref(false)
-const langsmithUrl = ref('')
 const threadStorageKey = 'llm_thread_id'
-
-const openLangsmith = () => {
-  if (langsmithUrl.value) {
-    window.open(langsmithUrl.value, '_blank')
-  }
-}
 
 const setThreadId = (id: string) => {
   currentThreadId.value = id
@@ -298,7 +282,6 @@ const chooseThread = async (id: string) => {
 const startNewChat = () => {
   setThreadId('')
   messages.value = []
-  agentVersion.value = 'React base'
 }
 
 // 删除对话
@@ -370,29 +353,58 @@ const sendMessage = async () => {
   try {
     const stream = chatStream(userStore.token, {
       query: content,
-      thread_id: getThreadId() || undefined,
-      agent_version: agentVersion.value
+      thread_id: getThreadId() || undefined
     })
     
+    type StreamData = {
+      content?: string
+      tool_call_id?: string
+      name?: string
+      args?: Record<string, unknown>
+      result?: unknown
+    }
+
     for await (const chunk of stream) {
+      const data = chunk.content as StreamData
       if (chunk.type === 'id') {
-        setThreadId(chunk.content)
+        setThreadId(data?.content || (chunk.content as string))
         loadHistory()
-      } else if (chunk.type === 'text') {
+      } else if (chunk.type === 'text_delta') {
         if (aiMessageRef) {
-          aiMessageRef.content += chunk.content
+          aiMessageRef.content += (data?.content || '')
           scrollToBottom()
         }
-      } else if (chunk.type === 'status') {
-        // Optional: display status (e.g. "Calling tool...")
-        // We can append it temporarily or use a separate status field
-        // For now, let's just log it or append as italic text
-        // aiMessageRef.content += `\n*${chunk.content}*\n` 
+      } else if (chunk.type === 'tool_start') {
+        if (aiMessageRef) {
+          if (!aiMessageRef.toolCalls) {
+            aiMessageRef.toolCalls = []
+          }
+          if (data?.tool_call_id && data?.name) {
+            aiMessageRef.toolCalls.push({
+              id: data.tool_call_id,
+              name: data.name,
+              args: data.args,
+              status: 'running'
+            })
+          }
+          scrollToBottom()
+        }
+      } else if (chunk.type === 'tool_end') {
+        if (aiMessageRef && aiMessageRef.toolCalls) {
+          const tool = aiMessageRef.toolCalls.find(t => t.id === data?.tool_call_id)
+          if (tool) {
+            tool.status = 'done'
+            tool.result = data?.result
+            scrollToBottom()
+          }
+        }
       } else if (chunk.type === 'error') {
         if (aiMessageRef) {
-          aiMessageRef.content += `\n**Error: ${chunk.content}**\n`
+          aiMessageRef.content += `\n**Error: ${data?.content || chunk.content}**\n`
           scrollToBottom()
         }
+      } else if (chunk.type === 'done') {
+        scrollToBottom()
       }
     }
     
@@ -437,12 +449,6 @@ const sendMessage = async () => {
 onMounted(() => {
   loadHistory()
   restoreThread()
-  if (userStore.token) {
-    getLangsmithInfo(userStore.token).then(info => {
-      langsmithEnabled.value = info.enabled
-      langsmithUrl.value = info.ui_url
-    }).catch(() => {})
-  }
 })
 </script>
 
@@ -732,6 +738,40 @@ onMounted(() => {
 .assistant .message-bubble {
   background-color: transparent;
   color: #2c3e50;
+}
+
+/* Tool Calls Styling */
+.tool-calls-container {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-call-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  color: #909399;
+  background-color: #f5f7fa;
+  padding: 6px 12px;
+  border-radius: 6px;
+  width: fit-content;
+  border: 1px solid #e4e7ed;
+}
+
+.tool-call-status .el-icon {
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+.tool-call-status .is-loading {
+  animation: rotating 2s linear infinite;
+  color: #409eff;
+}
+
+.tool-call-status .el-icon:not(.is-loading) {
+  color: #67c23a;
 }
 
 /* Markdown Styles */

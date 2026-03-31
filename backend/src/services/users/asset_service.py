@@ -576,8 +576,8 @@ class AssetService:
             preview = str(data.content).strip()
             data.name = preview[:20] if preview else "untitled"
         if not data.path or not data.path.strip():
-            from datetime import datetime
-            ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            from datetime import datetime, timezone
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             data.path = os.path.join(data.movie_id, data.type.value, f"{ts}.md")
         if not data.store_type:
             data.store_type = AssetStoreType.LOCAL

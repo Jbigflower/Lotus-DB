@@ -20,11 +20,13 @@ from .tasks.task_service import TaskService
 
 # 同步相关服务
 from .sync.base_sync_service import BaseSyncService
+from .sync.memory_sync_service import MemorySyncService
 from .sync.movie_sync_service import MovieSyncService
 from .sync.note_sync_service import NoteSyncService
 
 # 搜索相关服务
 from .search.search_service import SearchService
+from .search.rag_service import RagSearchService
 
 __all__ = [
     # 电影相关服务
@@ -40,8 +42,10 @@ __all__ = [
     "TaskService",
     # 同步相关服务
     "BaseSyncService",
+    "MemorySyncService",
     "MovieSyncService",
     "NoteSyncService",
     # 搜索相关服务
     "SearchService",
+    "RagSearchService",
 ]

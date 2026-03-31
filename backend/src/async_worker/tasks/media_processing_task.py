@@ -1,7 +1,7 @@
 # 模块顶部导入与调用修正
 import os
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, List
 from src.logic.media.media_logic import (
     extract_media_metadata,
     generate_video_thumbnails_and_sprite,
@@ -10,6 +10,7 @@ from src.logic.media.media_logic import (
 from src.logic.file.user_asset_file_ops import UserAssetFileOps
 from src.logic.file.film_asset_file_ops import FilmAssetFileOps 
 from src.core.handler import task_handler
+from src.agent.lotus_agent import LotusAgent
 
 
 UserOps = UserAssetFileOps()
@@ -160,3 +161,18 @@ async def generate_thumb_sprite_task(
             },
         )
     return result
+
+
+@task_handler("记忆抽取")
+async def extract_memory_task(
+    session_id: str,
+    user_id: str,
+    turns: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    if not turns:
+        print(f"[WARNING] extract_memory_task: {session_id}, {user_id}, {turns} is empty")
+        return {"status": "skipped", "turns": 0}
+    agent = LotusAgent()
+    extractor = await agent.memory_runtime.get_extractor()
+    await extractor.on_turn_complete(session_id, user_id, turns)
+    return {"status": "success", "turns": len(turns)}

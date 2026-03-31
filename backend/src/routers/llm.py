@@ -4,7 +4,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from src.services.llm.llm_service import LLMService
+from src.services.llm.llm_service import ChatService as LLMService
 from src.core.handler import router_handler
 from src.core.dependencies import get_current_user
 from config.logging import get_router_logger
@@ -17,7 +17,6 @@ logger = get_router_logger("llm")
 class ChatRequest(BaseModel):
     query: str = Field(...)
     thread_id: Optional[str] = None
-    agent_version: str = Field("React base")
 
 class ChatResponse(BaseModel):
     final_response: str
@@ -55,30 +54,12 @@ async def get_user_id(current_user = Depends(get_current_user)) -> str:
 @router_handler(action="chat_with_agent")
 async def chat_with_agent(body: ChatRequest, request: Request, user_id: str = Depends(get_user_id)):
     thread_id = body.thread_id or str(uuid4())
-    result = None
-    async for r in llm_service.chat(
+    result = await llm_service.chat(
         query=body.query,
         user_id=user_id,
         thread_id=thread_id,
-        Agent_version=body.agent_version,
-        stream=False
-    ):
-        result = r
-        break
-    final = ""
-    if isinstance(result, dict):
-        final = str(result.get("final_response") or "")
-        if not final:
-            msgs = result.get("messages")
-            if isinstance(msgs, list) and msgs:
-                last = msgs[-1]
-                try:
-                    final = getattr(last, "content", "") or ""
-                except Exception:
-                    try:
-                        final = last.get("content", "")
-                    except Exception:
-                        final = ""
+    )
+    final = str(result.get("data", {}).get("content") or "")
     return ChatResponse(final_response=final, thread_id=thread_id)
 
 @router.post("/chat/stream")
@@ -86,58 +67,29 @@ async def chat_with_agent(body: ChatRequest, request: Request, user_id: str = De
 async def chat_with_agent_stream(body: ChatRequest, request: Request, user_id: str = Depends(get_user_id)):
     thread_id = body.thread_id or str(uuid4())
     async def gen() -> AsyncGenerator[bytes, None]:
-        yield (json.dumps({"type": "id", "content": thread_id}) + "\n").encode("utf-8")
-        def extract_text(value) -> str:
-            if value is None:
-                return ""
-            if isinstance(value, str):
-                return value
-            if isinstance(value, dict):
-                direct = value.get("final_response")
-                if isinstance(direct, str) and direct:
-                    return direct
-                msgs = value.get("messages")
-                if isinstance(msgs, list) and msgs:
-                    return extract_text(msgs[-1])
-                for v in value.values():
-                    text = extract_text(v)
-                    if text:
-                        return text
-                return ""
-            if isinstance(value, (list, tuple)):
-                for v in value:
-                    text = extract_text(v)
-                    if text:
-                        return text
-                return ""
-            try:
-                content = getattr(value, "content", "")
-                return str(content or "")
-            except Exception:
-                return ""
+        def to_sse(event: str, payload: dict) -> bytes:
+            data = json.dumps(payload, ensure_ascii=False)
+            lines = []
+            if event:
+                lines.append(f"event: {event}")
+            for line in data.splitlines() or [""]:
+                lines.append(f"data: {line}")
+            return ("\n".join(lines) + "\n\n").encode("utf-8")
 
-        accumulated = ""
-        async for r in llm_service.chat(
+        yield to_sse("id", {"content": thread_id})
+        async for r in llm_service.chat_stream(
             query=body.query,
             user_id=user_id,
             thread_id=thread_id,
-            Agent_version=body.agent_version,
-            stream=True
         ):
-            text = extract_text(r)
-            if not text:
-                continue
-            if accumulated and text.startswith(accumulated):
-                delta = text[len(accumulated):]
-                accumulated = text
-            else:
-                delta = text
-                accumulated = text
-            if delta:
-                yield (json.dumps({"type": "text", "content": delta}) + "\n").encode("utf-8")
+            if isinstance(r, dict):
+                event_type = r.get("type") or ""
+                payload = r.get("data") or {}
+                if event_type:
+                    yield to_sse(event_type, payload)
     return StreamingResponse(
         gen(),
-        media_type="text/plain; charset=utf-8",
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache, no-transform",
             "Pragma": "no-cache",

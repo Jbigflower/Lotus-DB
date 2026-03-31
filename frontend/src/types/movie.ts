@@ -75,5 +75,5 @@ export type MoviePageResultResponseSchema = MoviePageResult
 
 export interface MovieCreateResponse {
   movie_info: MovieReadResponseSchema;
-  task_id: string;
+  task_id?: string | null;
 }

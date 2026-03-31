@@ -1,9 +1,18 @@
 import { http, resolveBaseURL } from '@/api/http'
 
+export interface ToolCall {
+  id: string
+  name: string
+  args?: Record<string, unknown>
+  result?: unknown
+  status: 'running' | 'done' | 'error'
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
   content: string
   created_at?: string
+  toolCalls?: ToolCall[]
 }
 
 export interface AgentConfig {
@@ -29,7 +38,6 @@ export interface ThreadDetail {
 export interface ChatRequest {
   query: string
   thread_id?: string
-  agent_version?: string
 }
 
 export interface ChatResponse {
@@ -38,8 +46,8 @@ export interface ChatResponse {
 }
 
 export interface StreamChunk {
-  type: 'id' | 'text' | 'status' | 'error'
-  content: string
+  type: 'id' | 'text_delta' | 'tool_start' | 'tool_end' | 'done' | 'error'
+  content?: unknown
 }
 
 export function chatWithAgent(token: string, data: ChatRequest) {
@@ -58,16 +66,6 @@ export function deleteThread(token: string, id: string) {
   return http.delete(`/api/v1/llm/threads/${id}`, { token })
 }
 
-export interface LangsmithInfo {
-  enabled: boolean
-  ui_url: string
-  project?: string
-}
-
-export function getLangsmithInfo(token: string) {
-  return http.get<LangsmithInfo>('/api/v1/llm/langsmith/info', { token })
-}
-
 export async function* chatStream(token: string, data: ChatRequest): AsyncGenerator<StreamChunk> {
   const baseURL = resolveBaseURL()
   const fetchURL = baseURL.endsWith('/') ? `${baseURL}api/v1/llm/chat/stream` : `${baseURL}/api/v1/llm/chat/stream`
@@ -76,7 +74,7 @@ export async function* chatStream(token: string, data: ChatRequest): AsyncGenera
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
-      'Accept': 'text/plain'
+      'Accept': 'text/event-stream'
     },
     body: JSON.stringify(data),
     cache: 'no-store'
@@ -94,25 +92,44 @@ export async function* chatStream(token: string, data: ChatRequest): AsyncGenera
       const { done, value } = await reader.read()
       if (done) break
       buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-      for (const line of lines) {
-        if (!line.trim()) continue
-        try {
-          const chunk = JSON.parse(line) as StreamChunk
-          yield chunk
-        } catch {
-          console.warn('Failed to parse stream chunk:', line)
+      
+      let eventEndIndex = buffer.indexOf('\n\n')
+      while (eventEndIndex !== -1) {
+        const eventText = buffer.slice(0, eventEndIndex)
+        buffer = buffer.slice(eventEndIndex + 2)
+        
+        let eventType = 'message'
+        let eventData = ''
+        
+        for (const line of eventText.split('\n')) {
+          if (line.startsWith('event:')) {
+            eventType = line.slice(6).trim()
+          } else if (line.startsWith('data:')) {
+            eventData = line.slice(5).trim()
+          }
         }
+        
+        if (eventData) {
+          try {
+            // data should be JSON according to spec
+            const parsedData = JSON.parse(eventData)
+            yield {
+              type: eventType as StreamChunk['type'],
+              content: parsedData
+            }
+          } catch {
+            // Some events like 'done' might not be JSON, fallback to raw string
+            yield {
+              type: eventType as StreamChunk['type'],
+              content: eventData
+            }
+          }
+        } else if (eventType === 'done') {
+           yield { type: 'done' }
+        }
+        
+        eventEndIndex = buffer.indexOf('\n\n')
       }
-    }
-    if (buffer.trim()) {
-       try {
-          const chunk = JSON.parse(buffer) as StreamChunk
-          yield chunk
-       } catch {
-          console.warn('Failed to parse last stream chunk:', buffer)
-       }
     }
   } finally {
     reader.releaseLock()
